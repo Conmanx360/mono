@@ -307,6 +307,26 @@ namespace System.Configuration
 			return assembly.GetName ().Version.ToString ();
 		}
 
+		private static string MakeStringPathNameFriendly (string name)
+		{
+			string tmp = name;
+
+			if (!String.IsNullOrEmpty(tmp)) {
+				/* Replace invalid path name characters with an underscore. */
+				foreach (char c in Path.GetInvalidPathChars()) {
+					tmp = tmp.Replace(c, '_');
+				}
+
+				/* Replace spaces with underscores. */
+				tmp = tmp.Replace(' ', '_');
+
+				/* Trim any trailing periods. */
+				tmp = tmp.TrimEnd('.');
+			}
+
+			return tmp;
+		}
+
 		private static void CreateUserConfigPath ()
 		{
 			if (userDefine)
@@ -332,14 +352,17 @@ namespace System.Configuration
 				userLocalPath = userLocalBasePath;
 
 			if (isCompany) {
-				userRoamingPath = Path.Combine (userRoamingPath, CompanyName);
-				userLocalPath = Path.Combine (userLocalPath, CompanyName);
+				string companyNamePathStr = MakeStringPathNameFriendly (CompanyName);
+
+				userRoamingPath = Path.Combine (userRoamingPath, companyNamePathStr);
+				userLocalPath = Path.Combine (userLocalPath, companyNamePathStr);
 			}
 
 			if (isProduct) {
-				userRoamingPath = Path.Combine (userRoamingPath, ProductName);
-				userLocalPath = Path.Combine (userLocalPath, ProductName);
-				
+				string productNamePathStr = MakeStringPathNameFriendly (ProductName);
+
+				userRoamingPath = Path.Combine (userRoamingPath, productNamePathStr);
+				userLocalPath = Path.Combine (userLocalPath, productNamePathStr);
 			}
 
 			string versionName;
