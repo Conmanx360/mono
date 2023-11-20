@@ -1,6 +1,8 @@
 Assembly/AssemblyInfo.cs
 ../../build/common/Consts.cs
 ../../build/common/Locale.cs
+../../build/common/SR.cs
+ReferenceSources/SR.cs
 System.Configuration.Internal/DelegatingConfigHost.cs
 System.Configuration.Internal/IConfigErrorInfo.cs
 System.Configuration.Internal/IConfigSystem.cs
@@ -44,9 +46,9 @@ System.Configuration/ConfigurationLockCollection.cs
 System.Configuration/ConfigurationManager.cs
 System.Configuration/ConfigurationPermission.cs
 System.Configuration/ConfigurationPermissionAttribute.cs
-System.Configuration/ConfigurationProperty.cs
-System.Configuration/ConfigurationPropertyAttribute.cs
-System.Configuration/ConfigurationPropertyCollection.cs
+../referencesource/System.Configuration/System/Configuration/ConfigurationProperty.cs
+../referencesource/System.Configuration/System/Configuration/ConfigurationPropertyAttribute.cs
+../referencesource/System.Configuration/System/Configuration/ConfigurationPropertyCollection.cs
 System.Configuration/ConfigurationPropertyOptions.cs
 System.Configuration/ConfigurationRemoveElement.cs
 System.Configuration/ConfigurationSaveMode.cs
@@ -57,7 +59,7 @@ System.Configuration/ConfigurationSectionCollection.cs
 System.Configuration/ConfigurationSectionGroup.cs
 System.Configuration/ConfigurationSectionGroupCollection.cs
 System.Configuration/ConfigurationUserLevel.cs
-System.Configuration/ConfigurationValidatorAttribute.cs
+../referencesource/System.Configuration/System/Configuration/ConfigurationValidatorAttribute.cs
 System.Configuration/ConfigurationValidatorBase.cs
 System.Configuration/ConfigXmlTextReader.cs
 System.Configuration/ConnectionStringsSection.cs
@@ -120,3 +122,6 @@ System.Configuration/TypeNameConverter.cs
 System.Configuration/ValidatorCallback.cs
 System.Configuration/WhiteSpaceTrimStringConverter.cs
 ../referencesource/System.Configuration/System/Configuration/ClientConfigPaths.cs
+../referencesource/System.Configuration/System/Configuration/Debug.cs
+../referencesource/System.Configuration/System/Configuration/StringUtil.cs
+../referencesource/System.Configuration/System/Configuration/TypeUtil.cs
