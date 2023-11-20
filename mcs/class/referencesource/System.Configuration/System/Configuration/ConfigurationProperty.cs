@@ -32,6 +32,8 @@ namespace System.Configuration {
         private String _clearElementName = null;
         private volatile bool _isTypeInited;
         private volatile bool _isConfigurationElementType;
+	/* From mono. */
+	ConfigurationCollectionAttribute collectionAttribute = null;
 
         public ConfigurationProperty(String name, Type type) {
             object defaultValue = null;
@@ -138,6 +140,7 @@ namespace System.Configuration {
                                                         typeof(ConfigurationCollectionAttribute)) as ConfigurationCollectionAttribute;
                 }
                 if (attribCollection != null) {
+		    collectionAttribute = attribCollection;
                     if (attribCollection.AddItemName.IndexOf(',') == -1) {
                         _addElementName = attribCollection.AddItemName;
                     }
@@ -202,12 +205,22 @@ namespace System.Configuration {
             }
         }
 
+        /* Duplicate from referencesource/BaseConfigurationRecord.cs, importing that class would be a headache. */
+        internal static bool IsReservedAttributeName(string name) {
+            if (StringUtil.StartsWith(name, "config") ||
+                StringUtil.StartsWith(name, "lock")) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
         private void ValidatePropertyName(string name) {
             if (string.IsNullOrEmpty(name)) {
                 throw new ArgumentException(SR.GetString(SR.String_null_or_empty), "name");
             }
 
-            if (BaseConfigurationRecord.IsReservedAttributeName(name)) {
+            if (IsReservedAttributeName(name)) {
                 throw new ArgumentException(SR.GetString(SR.Property_name_reserved, name));
             }
         }
@@ -288,6 +301,20 @@ namespace System.Configuration {
                 }
                 return _isConfigurationElementType;
             }
+        }
+
+	/*
+	 * INFO: Essentially duplicate of IsConfigurationElementType, adding to maintain consistency with
+	 * Mono's old class.
+	 */
+	internal bool IsElement {
+		get {
+			return IsConfigurationElementType;
+		}
+	}
+
+	internal ConfigurationCollectionAttribute CollectionAttribute {
+                get { return collectionAttribute; }
         }
 
         public Type Type {

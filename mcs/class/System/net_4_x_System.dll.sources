@@ -28,6 +28,7 @@ Microsoft.Win32/UserPreferenceChangingEventHandler.cs
 
 System/MonoToolsLocator.cs
 
+../referencesource/System/sys/system/configuration/TypeUtil.cs
 System.CodeDom.Compiler/*.cs
 System.Configuration/ApplicationScopedSettingAttribute.cs
 System.Configuration/ApplicationSettingsBase.cs

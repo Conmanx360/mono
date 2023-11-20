@@ -50,6 +50,9 @@ namespace System.Configuration
 		Configuration _configuration;
 		bool elementPresent;
 
+		/* referencesource members. */
+                internal static readonly Object s_nullPropertyValue = new Object();
+
 		internal Configuration Configuration {
 			get { return _configuration; }
 			set { _configuration = value; }
@@ -794,16 +797,8 @@ namespace System.Configuration
 			{
 				ConfigurationPropertyAttribute at = Attribute.GetCustomAttribute (prop, typeof(ConfigurationPropertyAttribute)) as ConfigurationPropertyAttribute;
 				if (at == null) continue;
-				string name = at.Name != null ? at.Name : prop.Name;
 
-				ConfigurationValidatorAttribute validatorAttr = Attribute.GetCustomAttribute (prop, typeof (ConfigurationValidatorAttribute)) as ConfigurationValidatorAttribute;
-				ConfigurationValidatorBase validator = validatorAttr != null ? validatorAttr.ValidatorInstance : null;
-
-				TypeConverterAttribute convertAttr = (TypeConverterAttribute) Attribute.GetCustomAttribute (prop, typeof (TypeConverterAttribute));
-				TypeConverter converter = convertAttr != null ? (TypeConverter) Activator.CreateInstance (Type.GetType (convertAttr.ConverterTypeName), true) : null;
-				ConfigurationProperty cp = new ConfigurationProperty (name, prop.PropertyType, at.DefaultValue, converter, validator, at.Options);
-
-				cp.CollectionAttribute = Attribute.GetCustomAttribute (prop, typeof(ConfigurationCollectionAttribute)) as ConfigurationCollectionAttribute;				
+				ConfigurationProperty cp = new ConfigurationProperty (prop);
 				properties.Add (cp);
 			}
 		}
