@@ -319,6 +319,7 @@ namespace System.Configuration
 			else
 				elem = CreateNewElement (elementName);
 			elem.Init ();
+			elem.AssociateContext(this.Configuration);
 			return elem;
 		}
 		

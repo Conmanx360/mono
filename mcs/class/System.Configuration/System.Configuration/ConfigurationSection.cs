@@ -129,10 +129,13 @@ namespace System.Configuration
 			base.ResetModified ();
 		}
 
-		ConfigurationElement CreateElement (Type t)
+		/*
+		 * Used to be CreateElement, renamed to CreateNewElement to avoid conflict with method brought
+		 * to Mono from referencesource.
+		 */
+		ConfigurationElement CreateNewElement (Type t)
 		{
-			ConfigurationElement elem = (ConfigurationElement) Activator.CreateInstance (t);
-			elem.Init ();
+			ConfigurationElement elem = this.CreateElement(t);
 			elem.Configuration = Configuration;
 			if (IsReadOnly ())
 				elem.SetReadOnly ();
@@ -226,7 +229,7 @@ namespace System.Configuration
 			externalDataXml = null;
 			ConfigurationElement elem;
 			if (parentElement != null) {
-				elem = (ConfigurationElement) CreateElement (GetType());
+				elem = (ConfigurationElement) CreateNewElement (GetType());
 				elem.Unmerge (this, parentElement, saveMode);
 			}
 			else

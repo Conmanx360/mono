@@ -23,10 +23,18 @@ namespace System.Configuration
     {
         private ConfigurationElement           _thisElement;
         private PropertyInformationCollection  _internalProperties;
-        private ConfigurationException[]       _errors;
+//        private ConfigurationException[]       _errors; FIXME:ERRORS: Unused.
+        private PropertyInformation tmp; /* Variable used for compatibility with Mono constructor. */
 
         internal ElementInformation(ConfigurationElement thisElement) {
             _thisElement = thisElement;
+        }
+
+	/* Constructor for compatibility with existing Mono code. */
+	internal ElementInformation (ConfigurationElement owner, PropertyInformation propertyInfo)
+        {
+                this.tmp = propertyInfo;
+                _thisElement = owner;
         }
 
         // Properties
@@ -61,8 +69,11 @@ namespace System.Configuration
         //
         public bool IsLocked {
             get {
-                return (((_thisElement.ItemLocked & ConfigurationValueFlags.Locked) != 0) &&
+                return false;
+		/* FIXME:LOCKING: Current implementation of ConfigurationElement has no locking.
+		return (((_thisElement.ItemLocked & ConfigurationValueFlags.Locked) != 0) &&
                         ((_thisElement.ItemLocked & ConfigurationValueFlags.Inherited) != 0));
+		*/
             }
         }
 
@@ -152,6 +163,7 @@ namespace System.Configuration
         // Get a Read Only list of the exceptions for this 
         // element
         //
+        /* FIXME:ERRORS: Mono doesn't implement errors on ConfigurationElement.
         private ConfigurationException[] GetReadOnlyErrorsList() {
             ArrayList                arrayList;
             int                      count;
@@ -169,18 +181,22 @@ namespace System.Configuration
 
             return exceptionList;
         }
-        
+        */
+
         // Errors
         //
         // Retrieve the _errors for this element and sub elements
         //
         public ICollection Errors {
             get {
-                if (_errors == null) {
+                throw new NotImplementedException ();
+                /* FIXME:ERRORS: Mono doesn't implement errors on ConfigurationElement.
+		if (_errors == null) {
                     _errors = GetReadOnlyErrorsList();
                 }
 
                 return _errors;
+		*/
             }
         }
     }

@@ -23,6 +23,7 @@ namespace System.Configuration {
         private string PropertyName;
         private ConfigurationProperty _Prop = null;
         private const string LockAll = "*";
+        bool isLocked;
         
         private ConfigurationProperty Prop {
             get {
@@ -32,6 +33,11 @@ namespace System.Configuration {
                 return _Prop;
             }
         }
+
+	/* Equivalent to Prop property, maintains back compat with Mono. */
+	internal ConfigurationProperty Property {
+		get { return Prop; }
+	}
 
         internal PropertyInformation(ConfigurationElement thisElement, string propertyName) {
             PropertyName = propertyName;
@@ -128,7 +134,10 @@ namespace System.Configuration {
         // Is this property locked?
         //
         public bool IsLocked {
+
+	    /* FIXME:LOCKING: We're using Mono's ConfigurationElement, which lacks locking support. If adding support for locking, look here.
             get {
+
                 return ((ThisElement.LockedAllExceptAttributesList != null && !ThisElement.LockedAllExceptAttributesList.DefinedInParent(PropertyName)) ||
                     (ThisElement.LockedAttributesList != null && 
                         (ThisElement.LockedAttributesList.DefinedInParent(PropertyName) || 
@@ -136,6 +145,9 @@ namespace System.Configuration {
                         (((ThisElement.ItemLocked & ConfigurationValueFlags.Locked)    != 0) &&
                          ((ThisElement.ItemLocked & ConfigurationValueFlags.Inherited) != 0)));
             }
+	    */
+                get { return isLocked; }
+                internal set { isLocked = value; }
         }
 
         // Source
@@ -207,6 +219,16 @@ namespace System.Configuration {
             get {
                 return Prop.Description;
             }
+        }
+
+	/* Methods from Mono to maintain compatibility. */
+        internal bool IsElement {
+            get { return Prop.IsElement; }
+        }
+
+        internal string GetStringValue ()
+        {
+            return Prop.ConvertToString(Value);
         }
     }
 }

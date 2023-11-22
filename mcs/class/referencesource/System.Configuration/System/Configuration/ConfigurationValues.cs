@@ -21,7 +21,8 @@ using System.Text;
 namespace System.Configuration {
 
     internal class ConfigurationValues : NameObjectCollectionBase {
-        private BaseConfigurationRecord _configRecord;
+//        private BaseConfigurationRecord _configRecord;
+        private Configuration _configuration; /* To maintain Mono compatibility, Mono stores context in Configuration. */
         private volatile bool _containsElement;
         private volatile bool _containsInvalidValue;
 
@@ -32,7 +33,8 @@ namespace System.Configuration {
         //
         // Associate a collection of values with a configRecord
         //
-        internal void AssociateContext(BaseConfigurationRecord configRecord) {
+/*
+	internal void AssociateContext(BaseConfigurationRecord configRecord) {
             _configRecord = configRecord;
 
             // Associate with children
@@ -40,7 +42,15 @@ namespace System.Configuration {
                 currentElement.AssociateContext(_configRecord);
             }
         }
+*/
+	internal void AssociateContext(Configuration config) {
+            _configuration = config;
 
+            // Associate with children
+            foreach (ConfigurationElement currentElement in ConfigurationElements) {
+                currentElement.AssociateContext(_configuration);
+            }
+        }
         internal bool Contains(string key) {
             return (BaseGet(key) != null);
         }
@@ -85,7 +95,8 @@ namespace System.Configuration {
             if (value != null) {
                 if (value is ConfigurationElement) {
                     _containsElement = true;
-                    ((ConfigurationElement)value).AssociateContext(_configRecord);
+                    ((ConfigurationElement)value).AssociateContext(_configuration);
+//                    ((ConfigurationElement)value).AssociateContext(_configRecord); FIXME: We're not using configRecord.
                 }
                 else if (value is InvalidPropValue) {
                     _containsInvalidValue = true;
