@@ -246,9 +246,11 @@ namespace System.Configuration
 			using (StringWriter sw = new StringWriter ()) {
 				using (XmlTextWriter tw = new XmlTextWriter (sw)) {
 					tw.Formatting = Formatting.Indented;
-					if (hasValues)
+					if (hasValues) {
+						/* Force the first element in the section to be emitted. */
+                                                elem.DataToWriteInternal = (saveMode != ConfigurationSaveMode.Minimal);
 						elem.SerializeToXmlElement (tw, name);
-					else if ((saveMode == ConfigurationSaveMode.Modified) && elem.IsModified ()) {
+					} else if ((saveMode == ConfigurationSaveMode.Modified) && elem.IsModified ()) {
 						// MS emits an empty section element.
 						tw.WriteStartElement (name);
 						tw.WriteEndElement ();

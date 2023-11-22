@@ -57,6 +57,7 @@ namespace System.Configuration
                 private static readonly Hashtable s_propertyBags = new Hashtable();
                 private static volatile Dictionary<Type,ConfigurationValidatorBase> s_perTypeValidators;
                 private ConfigurationElementProperty    _elementProperty = s_ElementProperty;
+                private bool                            _bDataToWrite;
 
 		/*
 		 * Originally from referencesource/BaseConfigurationRecord.cs, importing that class would be a headache.
@@ -197,6 +198,15 @@ namespace System.Configuration
 				if (PropertiesFromType(this.GetType(), out result))
 					ApplyValidatorsRecursive(this);
 				return result;
+			}
+		}
+
+		internal bool DataToWriteInternal {
+			get {
+				return _bDataToWrite;
+			}
+			set {
+				_bDataToWrite = value;
 			}
 		}
 		/* End of referencesource code. */
@@ -634,16 +644,16 @@ namespace System.Configuration
 
 		protected internal virtual bool SerializeElement (XmlWriter writer, bool serializeCollectionKey)
 		{
+                        bool wroteData = _bDataToWrite;
 			PreSerialize (writer);
 			
 			if (serializeCollectionKey) {
 				ConfigurationPropertyCollection props = GetKeyProperties ();
-				foreach (ConfigurationProperty prop in props)
-					writer.WriteAttributeString (prop.Name, prop.ConvertToString (this[prop.Name]));
-				return props.Count > 0;
+				foreach (ConfigurationProperty prop in props) {
+					if (writer != null) writer.WriteAttributeString (prop.Name, prop.ConvertToString (this[prop.Name]));
+				}
+				return (props.Count > 0) || wroteData;
 			}
-			
-			bool wroteData = false;
 			
 			foreach (PropertyInformation prop in ElementInformation.Properties)
 			{
@@ -655,7 +665,7 @@ namespace System.Configuration
 				if (!saveContext.HasValue (prop))
 					continue;
 
-				writer.WriteAttributeString (prop.Name, prop.GetStringValue ());
+				if (writer != null) writer.WriteAttributeString (prop.Name, prop.GetStringValue ());
 				wroteData = true;
 			}
 			
@@ -679,11 +689,14 @@ namespace System.Configuration
 			if (!saveContext.HasValues ())
 				return false;
 
-			if (elementName != null && elementName != "")
-				writer.WriteStartElement (elementName);
-			bool res = SerializeElement (writer, false);
-			if (elementName != null && elementName != "")
-				writer.WriteEndElement ();
+			bool res = SerializeElement(null, false);
+			if (res == true) {
+				if (writer != null && elementName != null && elementName != "")
+					writer.WriteStartElement (elementName);
+				res = SerializeElement (writer, false);
+				if (writer != null && elementName != null && elementName != "")
+					writer.WriteEndElement ();
+			}
 			return res;
 		}
 
