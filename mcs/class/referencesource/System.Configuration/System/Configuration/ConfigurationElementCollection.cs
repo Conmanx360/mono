@@ -12,7 +12,7 @@ using System.Xml;
 namespace System.Configuration {
 
     [System.Diagnostics.DebuggerDisplay("Count = {Count}")]
-    public abstract class ConfigurationElementCollection : ConfigurationElement, ICollection {
+    public abstract partial class ConfigurationElementCollection : ConfigurationElement, ICollection {
         internal const string DefaultAddItemName = "add";
         internal const string DefaultRemoveItemName = "remove";
         internal const string DefaultClearItemsName = "clear";
@@ -57,13 +57,24 @@ namespace System.Configuration {
             inBothCopyNoRemove = 5,
         }
 
+        /* Duplicate from referencesource/BaseConfigurationRecord.cs, importing that class would be a headache. */
+        internal static bool IsReservedAttributeName(string name) {
+            if (StringUtil.StartsWith(name, "config") ||
+                StringUtil.StartsWith(name, "lock")) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
         protected internal string AddElementName {
             get {
                 return _addElement;
             }
             set {
                 _addElement = value;
-                if (BaseConfigurationRecord.IsReservedAttributeName(value)) {
+                if (IsReservedAttributeName(value)) {
                     throw new ArgumentException(SR.GetString(SR.Item_name_reserved, DefaultAddItemName, value));
                 }
             }
@@ -74,7 +85,7 @@ namespace System.Configuration {
                 return _removeElement;
             }
             set {
-                if (BaseConfigurationRecord.IsReservedAttributeName(value)) {
+                if (IsReservedAttributeName(value)) {
                     throw new ArgumentException(SR.GetString(SR.Item_name_reserved, DefaultRemoveItemName, value));
                 }
                 _removeElement = value;
@@ -86,7 +97,7 @@ namespace System.Configuration {
                 return _clearElement;
             }
             set {
-                if (BaseConfigurationRecord.IsReservedAttributeName(value)) {
+                if (IsReservedAttributeName(value)) {
                     throw new ArgumentException(SR.GetString(SR.Item_name_reserved, DefaultClearItemsName, value));
                 }
                 _clearElement = value;
@@ -97,7 +108,8 @@ namespace System.Configuration {
         //
         // Associate a collection of values with a configRecord
         //
-        internal override void AssociateContext(BaseConfigurationRecord configRecord) {
+/*
+	internal override void AssociateContext(BaseConfigurationRecord configRecord) {
             base.AssociateContext(configRecord);
 
             foreach (Entry entry in _items) {
@@ -106,6 +118,15 @@ namespace System.Configuration {
                 }
             }
         }
+*/
+	internal override void AssociateContext(Configuration config) {
+	    base.AssociateContext(config);
+            foreach (Entry entry in _items) {
+                if (entry._value != null) {
+                    entry._value.AssociateContext(config);
+                }
+            }
+	}
 
         protected internal override bool IsModified() {
             if (bModified == true) {
@@ -209,14 +230,18 @@ namespace System.Configuration {
                 ConfigurationElementCollection parentCollection = parentElement as ConfigurationElementCollection;
                 ConfigurationElementCollection sourceCollection = sourceElement as ConfigurationElementCollection;
                 Hashtable Inheritance = new Hashtable();
-                _lockedAllExceptAttributesList = sourceElement._lockedAllExceptAttributesList;
+
+		/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
+		_lockedAllExceptAttributesList = sourceElement._lockedAllExceptAttributesList;
                 _lockedAllExceptElementsList = sourceElement._lockedAllExceptElementsList;
                 _fItemLocked = sourceElement._fItemLocked;
                 _lockedAttributesList = sourceElement._lockedAttributesList;
                 _lockedElementsList = sourceElement._lockedElementsList;
+		*/
+                AssociateContext(sourceElement.Configuration);
+//                AssociateContext(sourceElement._configRecord);
 
-                AssociateContext(sourceElement._configRecord);
-
+		/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                 if (parentElement != null) {
                     if (parentElement._lockedAttributesList != null)
                         _lockedAttributesList = UnMergeLockList(sourceElement._lockedAttributesList,
@@ -231,6 +256,7 @@ namespace System.Configuration {
                         _lockedAllExceptElementsList = UnMergeLockList(sourceElement._lockedAllExceptElementsList,
                             parentElement._lockedAllExceptElementsList, saveMode);
                 }
+		*/
 
                 if (CollectionType == ConfigurationElementCollectionType.AddRemoveClearMap ||
                     CollectionType == ConfigurationElementCollectionType.AddRemoveClearMapAlternate) {
@@ -313,9 +339,11 @@ namespace System.Configuration {
 
                                 elem.Unmerge(entry._value, null, saveMode);
 
+			        /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                                 if (tp == InheritedType.inSelf) {
                                     elem.RemoveAllInheritedLocks(); // If the key changed only local locks are kept
                                 }
+				*/
 
                                 BaseAdd(elem,ThrowOnDuplicate,true);                     // Add it
                             }
@@ -384,8 +412,9 @@ namespace System.Configuration {
 
         protected internal override void Reset(ConfigurationElement parentElement) {
             ConfigurationElementCollection parentCollection = parentElement as ConfigurationElementCollection;
+	    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
             ResetLockLists(parentElement);
-
+	    */
             if (parentCollection != null) {
                 foreach (Entry entry in parentCollection.Items) {
                     ConfigurationElement elem = CallCreateNewElement(entry.GetKey(this).ToString());
@@ -423,8 +452,10 @@ namespace System.Configuration {
                     throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_read_only));
                 }
                 if (value == true) {
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                     CheckLockedElement(_clearElement, null);  // has clear been locked?
                     CheckLockedElement(_removeElement, null); // has remove been locked? Clear implies remove
+		    */
                 }
                 bModified = true;
                 bEmitClearTag = value;
@@ -475,18 +506,21 @@ namespace System.Configuration {
                 throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_read_only));
             }
 
+	    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
             if (LockItem == true && ignoreLocks == false) {
                 throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_element_locked, _addElement));
             }
-
+	    */
             Object key = GetElementKeyInternal(element);
             int iFoundItem = -1;
             for (int index = 0; index < _items.Count; index++) {
                 Entry entry = (Entry)_items[index];
                 if (CompareKeys(key, entry.GetKey(this))) {
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                     if (entry._value != null && entry._value.LockItem == true && ignoreLocks == false) {
                         throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_collection_item_locked));
                     }
+		    */
                     if (entry._entryType != EntryType.Removed && throwIfExists) {
                         if (!element.Equals(entry._value)) {
                             throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_collection_entry_already_exists, key),
@@ -518,11 +552,14 @@ namespace System.Configuration {
                     }
                     else {
                         // check to see if the element is trying to set a locked property.
-                        if (ignoreLocks == false) {
+
+			/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
+			if (ignoreLocks == false) {
                             element.HandleLockedAttributes(entry._value);
                             // copy the lock from the removed element before setting the new element
                             element.MergeLocks(entry._value);
                         }
+			*/
                         entry._value = element;
                         bModified = true;
                         return;
@@ -575,7 +612,8 @@ namespace System.Configuration {
             // constructor has been run so that it may access
             // virtual methods.
 
-            element.AssociateContext(_configRecord);
+//            element.AssociateContext(_configRecord);
+	    element.AssociateContext(Configuration);
             if (element != null) {
                 element.CallInit();
             }
@@ -584,10 +622,11 @@ namespace System.Configuration {
                 throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_read_only));
             }
 
+	    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
             if (!ignoreLocks) { // during reset we ignore locks so we can copy the elements
                 if(CollectionType == ConfigurationElementCollectionType.BasicMap ||
                     CollectionType == ConfigurationElementCollectionType.BasicMapAlternate) {
-                    if (BaseConfigurationRecord.IsReservedAttributeName(ElementName)) {
+                    if (IsReservedAttributeName(ElementName)) {
                         throw new ArgumentException(SR.GetString(SR.Basicmap_item_name_reserved, ElementName));
                     }
                     CheckLockedElement(ElementName, null);
@@ -598,7 +637,7 @@ namespace System.Configuration {
                     CheckLockedElement(_addElement, null);
                 }
             }
-
+	    */
             if (CollectionType == ConfigurationElementCollectionType.BasicMapAlternate ||
                 CollectionType == ConfigurationElementCollectionType.AddRemoveClearMapAlternate) {
                 if (index == -1) {
@@ -709,6 +748,7 @@ namespace System.Configuration {
                         }
                     }
 
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                     if (entry._value.LockItem == true) {
                         throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_attribute_locked, key));
                     }
@@ -716,7 +756,7 @@ namespace System.Configuration {
                     if (entry._value.ElementPresent == false) {
                         CheckLockedElement(_removeElement, null); // has remove been locked?
                     }
-
+		    */
                     switch (entry._entryType) {
                         case EntryType.Added:
                             if (CollectionType != ConfigurationElementCollectionType.AddRemoveClearMap &&
@@ -882,9 +922,10 @@ namespace System.Configuration {
                 throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_read_only));
             }
 
+	    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
             CheckLockedElement(_clearElement, null);  // has clear been locked?
             CheckLockedElement(_removeElement, null); // has remove been locked? Clear implies remove
-
+	    */
             bModified = true;
             bCollectionCleared = true;
             if ((CollectionType == ConfigurationElementCollectionType.BasicMap ||
@@ -911,9 +952,11 @@ namespace System.Configuration {
                 // check for locks before removing any items from the collection
                 for (int CheckIndex = 0; CheckIndex < _items.Count; CheckIndex++) {
                     Entry entry = (Entry)_items[CheckIndex];
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                     if (entry._value != null && entry._value.LockItem == true) {
                         throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_collection_item_locked_cannot_clear));
                     }
+		    */
                 }
 
                 for (int RemoveIndex = _items.Count - 1; RemoveIndex >= 0; RemoveIndex--) {
@@ -957,6 +1000,7 @@ namespace System.Configuration {
                 throw new ConfigurationErrorsException(SR.GetString(SR.IndexOutOfRange, index));
             }
             else {
+		/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                 if (entry._value.LockItem == true) {
                     throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_attribute_locked, entry.GetKey(this)));
                 }
@@ -964,7 +1008,7 @@ namespace System.Configuration {
                 if (entry._value.ElementPresent == false) {
                     CheckLockedElement(_removeElement, null); // has remove been locked?
                 }
-
+		*/
                 switch (entry._entryType) {
                     case EntryType.Added:
                         if (CollectionType != ConfigurationElementCollectionType.AddRemoveClearMap &&
@@ -986,10 +1030,12 @@ namespace System.Configuration {
                         }
                         else {
                             // don't really remove it from the collection just mark it removed
+
+			    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                             if (entry._value.ElementPresent == false) {
                                 CheckLockedElement(_removeElement, null); // has remove been locked?
                             }
-
+			    */
                             entry._entryType = EntryType.Removed;
                             _removedItemCount++;
                         }
@@ -1013,7 +1059,43 @@ namespace System.Configuration {
             }
         }
 
+	/* Following two methods come from Mono's ConfigurationElementCollection to maintain compatibility. */
+	internal override void PrepareSave (ConfigurationElement parentElement, ConfigurationSaveMode mode)
+	{
+		var parent = (ConfigurationElementCollection)parentElement;
+		base.PrepareSave (parentElement, mode);
 
+		foreach (Entry entry in _items) {
+		    if (entry._entryType != EntryType.Removed) {
+		        ConfigurationElement elem = entry._value;
+		        object key = GetElementKeyInternal(elem);
+		        ConfigurationElement pitem = parent != null ? parent.BaseGet (key) as ConfigurationElement : null;
+
+		        elem.PrepareSave (pitem, mode);
+		    }
+		}
+	}
+
+	internal override bool HasValues (ConfigurationElement parentElement, ConfigurationSaveMode mode)
+	{
+		var parent = (ConfigurationElementCollection)parentElement;
+
+		if (mode == ConfigurationSaveMode.Full)
+			return this.Count > 0;
+
+		foreach (Entry entry in _items) {
+		    if (entry._entryType != EntryType.Removed) {
+		        ConfigurationElement elem = entry._value;
+		        object key = GetElementKeyInternal(elem);
+		        ConfigurationElement pitem = parent != null ? parent.BaseGet (key) as ConfigurationElement : null;
+
+			if (elem.HasValues (pitem, mode))
+				return true;
+		    }
+		}
+
+		return false;
+	}
 
         protected internal override bool SerializeElement(XmlWriter writer, bool serializeCollectionKey) {
             ConfigurationElementCollectionType type = CollectionType;
@@ -1039,7 +1121,7 @@ namespace System.Configuration {
                     type == ConfigurationElementCollectionType.BasicMapAlternate) {
                     if (entry._entryType == EntryType.Added || entry._entryType == EntryType.Replaced) {
                         if (ElementName != null && ElementName.Length != 0) {
-                            if (BaseConfigurationRecord.IsReservedAttributeName(ElementName)) {
+                            if (IsReservedAttributeName(ElementName)) {
                                 throw new ArgumentException(SR.GetString(SR.Basicmap_item_name_reserved, ElementName));
                             }
                             DataToWrite |= entry._value.SerializeToXmlElement(writer, ElementName);
@@ -1081,15 +1163,21 @@ namespace System.Configuration {
                 CollectionType == ConfigurationElementCollectionType.AddRemoveClearMapAlternate) {
                 if (elementName == _addElement) {
                     ConfigurationElement elem = CallCreateNewElement();
-                    elem.ResetLockLists(this);
-                    elem.DeserializeElement(reader, false);
+
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
+		    elem.ResetLockLists(this);
+		    */
+		    elem.DeserializeElement(reader, false);
                     BaseAdd(elem);
                     handled = true;
                 }
                 else if (elementName == _removeElement) {
                     ConfigurationElement elem = CallCreateNewElement();
-                    elem.ResetLockLists(this);
-                    elem.DeserializeElement(reader, true);
+
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
+		    elem.ResetLockLists(this);
+		    */
+		    elem.DeserializeElement(reader, true);
                     if (IsElementRemovable(elem) == true) {
                         BaseRemove(GetElementKeyInternal(elem), false);
                     }
@@ -1097,38 +1185,46 @@ namespace System.Configuration {
                     handled = true;
                 }
                 else if (elementName == _clearElement) {
+		    reader.MoveToContent (); // FIXME:FROM-MONO: If we move to referencesource's DeserializeElement, remove this.
                     if (reader.AttributeCount > 0) {
                         while (reader.MoveToNextAttribute()) {
                             String propertyName = reader.Name;
                             throw new ConfigurationErrorsException(SR.GetString(SR.Config_base_unrecognized_attribute, propertyName), reader);
                         }
                     }
+		    /* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                     CheckLockedElement(elementName, reader);
-                    reader.MoveToElement();
+		    */
+		    reader.MoveToElement();
+                    reader.Skip (); // FIXME:FROM-MONO: If we move to referencesource's DeserializeElement, remove this.
                     BaseClear(); //
                     bEmitClearTag = true;
                     handled = true;
                 }
             }
             else if (elementName == ElementName) {
-                if (BaseConfigurationRecord.IsReservedAttributeName(elementName)) {
+                if (IsReservedAttributeName(elementName)) {
                     throw new ArgumentException(SR.GetString(SR.Basicmap_item_name_reserved, elementName));
                 }
                 ConfigurationElement elem = CallCreateNewElement();
+		/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                 elem.ResetLockLists(this);
-                elem.DeserializeElement(reader, false);
+                */
+		elem.DeserializeElement(reader, false);
                 BaseAdd(elem);
 
                 handled = true;
             }
             else if (IsElementName(elementName)) {   // this section handle the collection like the allow deny senario which
-                if (BaseConfigurationRecord.IsReservedAttributeName(elementName)) {
+                if (IsReservedAttributeName(elementName)) {
                     throw new ArgumentException(SR.GetString(SR.Basicmap_item_name_reserved, elementName));
                 }
                 // have multiple tags for the collection
                 ConfigurationElement elem = CallCreateNewElement(elementName);
+		/* FIXME:LOCKING: We haven't pulled over the locking code from referencesource.
                 elem.ResetLockLists(this);
-                elem.DeserializeElement(reader, false);
+                */
+		elem.DeserializeElement(reader, false);
                 BaseAdd(-1, elem);
                 handled = true;
             }
@@ -1137,14 +1233,16 @@ namespace System.Configuration {
 
         private ConfigurationElement CallCreateNewElement(string elementName) {
             ConfigurationElement elem = CreateNewElement(elementName);
-            elem.AssociateContext(_configRecord);
+//            elem.AssociateContext(_configRecord);
+	    elem.AssociateContext(Configuration);
             elem.CallInit();
             return elem;
         }
 
         private ConfigurationElement CallCreateNewElement() {
             ConfigurationElement elem = CreateNewElement();
-            elem.AssociateContext(_configRecord);
+//            elem.AssociateContext(_configRecord);
+	    elem.AssociateContext(Configuration);
             elem.CallInit();
             return elem;
         }
