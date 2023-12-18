@@ -106,6 +106,7 @@ namespace System.Configuration
         public SettingElement(String name, SettingsSerializeAs serializeAs) : this() {
             Name = name;
             SerializeAs = serializeAs;
+	    Value.serializeAs = serializeAs;
         }
 
         internal string Key {
@@ -167,6 +168,7 @@ namespace System.Configuration
 
         private XmlNode _valueXml;
         private bool isModified = false;
+	private SettingsSerializeAs _serializeAs;
          
         protected override ConfigurationPropertyCollection Properties {
             get {
@@ -177,7 +179,15 @@ namespace System.Configuration
                 return _properties;
             }
         }
-         
+        public SettingsSerializeAs serializeAs {
+		get {
+			return _serializeAs;
+		}
+		set {
+			_serializeAs = value;
+		}
+	}
+
         public XmlNode ValueXml {
             get {
                 return _valueXml;
@@ -195,7 +205,28 @@ namespace System.Configuration
 
         public override bool Equals(object settingValue) {
             SettingValueElement u = settingValue as SettingValueElement;
-            return (u != null && Object.Equals(u.ValueXml, ValueXml)); 
+	    if (u == null)
+		    return false;
+	    if (Object.Equals(u.ValueXml, ValueXml))
+		    return true;
+	    if (ValueXml == null || u.ValueXml == null)
+		    return false;
+
+	    switch (serializeAs) {
+	    case SettingsSerializeAs.Xml:
+		if (ValueXml.InnerXml.Equals(u.ValueXml.InnerXml))
+			return true;
+		break;
+	    case SettingsSerializeAs.String:
+		if (ValueXml.InnerText.Equals(u.ValueXml.InnerText))
+			return true;
+		break;
+	    case SettingsSerializeAs.Binary:
+		if (ValueXml.InnerText.Equals(u.ValueXml.InnerText))
+			return true;
+		break;
+	    }
+	    return false;
         }
 
         public override int GetHashCode() {
