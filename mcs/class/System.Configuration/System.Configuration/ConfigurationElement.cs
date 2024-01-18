@@ -1062,8 +1062,8 @@ namespace System.Configuration
 		{
 			if (saveContext == null)
 				throw new InvalidOperationException ();
-			if (!saveContext.HasValues ())
-				return false;
+//			if (!saveContext.HasValues ())
+//				return false;
 
 			bool res = SerializeElement(null, false);
 			if (res == true) {
@@ -1238,7 +1238,7 @@ namespace System.Configuration
 
 			public bool HasValue (PropertyInformation prop)
 			{
-				if (Mode == ConfigurationSaveMode.Full)
+				if (Mode == ConfigurationSaveMode.Full || prop.IsRequired)
 					return true;
 				return Element.HasValue (Parent, prop, Mode);
 			}
